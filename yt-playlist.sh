@@ -1,0 +1,1 @@
+youtube-dl -o "%%(playlist)s/%%(playlist_index)s - %%(title)s.%%(ext)s" --a https://www.youtube.com/playlist?list=PLH-0HZ0SQ_PHqX_du7OGCj9L6fQn2aCnw

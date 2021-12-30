@@ -1,1 +1,0 @@
-youtube-dl -o "%%(playlist)s/%%(playlist_index)s - %%(title)s.%%(ext)s" --extract-audio --a https://www.youtube.com/playlist?list=PLGpWDULxa0hX6SmFtrCA2nyjthDmt9N1L
