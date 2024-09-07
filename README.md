@@ -1,6 +1,6 @@
-# you-tube
+#  YouTubeDL
 
-Way to make own playlist from yt
+Way to make download/upload playlist from yt
 
 ## instalation
 
