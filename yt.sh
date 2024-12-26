@@ -113,19 +113,18 @@ if [ -z "${u}" ] || [ -z "${o}" ]; then
    usage
 fi
 
-if [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* ]]; then
-	print_progress "Link ${u} from YT convert to mkv & mp3 single file."
-	if [[ $o == mkv ]]; then
-		$FILE -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' --restrict-filenames --add-metadata --merge-output-format mkv --output "%(title)s.%(ext)s" "${u}"
-	else
-		$FILE --audio-format mp3 --extract-audio --audio-quality 0 --restrict-filenames --add-metadata --embed-thumbnail --output "%(title)s.%(ext)s" "${u}"
-	fi
-elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* ]]; then
+if [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* && "${o}" == "mkv" ]]; then
+	print_progress "Link ${u} from YT convert to mkv single file."
+	$FILE -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' --restrict-filenames --add-metadata --merge-output-format mkv --output "video/%(title)s.%(ext)s" "${u}"
+elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* && "${o}" == "mp3" ]]; then
+	print_progress "Link ${u} from YT convert to mp3 single file."
+	$FILE --audio-format mp3 --extract-audio --audio-quality 0 --restrict-filenames --add-metadata --embed-thumbnail --output "audio/%(title)s.%(ext)s" "${u}"
+elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* && $o == "mkv" ]]; then
 	print_progress "Link ${u} playlist from YT convert to mkv${NC}"
-	$FILE -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' --verbose --sleep-interval 5 --max-sleep-interval 12 --ignore-errors --restrict-filenames --add-metadata --merge-output-format mkv --output "%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
-elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* && $o = "mp3" ]]; then
+	$FILE -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' --verbose --sleep-interval 20 --max-sleep-interval 60 --ignore-errors --restrict-filenames --add-metadata --merge-output-format mkv --output "video/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
+elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* && $o == "mp3" ]]; then
 	print_progress "Link ${u} playlist from YT convert to mp3"
-	$FILE --ignore-errors --audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 --restrict-filenames --add-metadata --embed-thumbnail --output "%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
+	$FILE --ignore-errors --audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 --sleep-interval 20 --max-sleep-interval 60 --restrict-filenames --add-metadata --embed-thumbnail --output "audio/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
 elif [[ ${u} =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* && $o = "mp3" ]]; then
 	print_progress "Link ${u} video from YT convert to mp3"
 	$FILE --ignore-errors --audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 --restrict-filenames --add-metadata --embed-thumbnail --output "%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
