@@ -61,25 +61,50 @@ print_debug() {
 	echo -e "${TXT_COLOR}"
 }
 
+# Check if yt-dlp is installed
+if ! command -v yt-dlp &> /dev/null; then
+    print_error "yt-dlp not found. Please install it with: sudo apt install yt-dlp"
+    exit 1
+fi
 
-FILE=/usr/bin/yt-dlp
+# Common options
+COMMON_OPTS="--restrict-filenames --add-metadata"
+PLAYLIST_OPTS="--verbose --sleep-interval 10 --max-sleep-interval 30 --ignore-errors"
+
+# Check if yt-dlp is installed
+if ! command -v yt-dlp &> /dev/null; then
+    print_error "yt-dlp not found. Please install it with: sudo apt install yt-dlp"
+    exit 1
+fi
+
+# Common options
+COMMON_OPTS="--restrict-filenames --add-metadata"
+PLAYLIST_OPTS="--verbose --sleep-interval 10 --max-sleep-interval 30 --ignore-errors"
+
+regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]'
 
 usage() {
 	echo -e ""
-	echo -e "Usage: yt.sh -a <yt url> -o [mp3|mkv]"
-	echo -e
-	echo -e "PRE-RUN:"
-	echo -e " - sudo apt install yt-dlp"
-	echo -e " - sudo apt install ffmpeg"
+	echo -e "Usage: yt.sh -u <yt url> -o [mp3|mkv]"
 	echo -e ""
-	echo -e "TEST:"
-	echo -e " - ./yt.sh https://www.youtube.com/watch?v=GxrPn7qwt6c"
+	echo -e "Options:"
+	echo -e "  -u <url>    YouTube video or playlist URL"
+	echo -e "  -o <format> Output format (mp3 for audio, mkv for video)"
+	echo -e ""
+	echo -e "PRE-RUN:"
+	echo -e "  - sudo apt install yt-dlp"
+	echo -e "  - sudo apt install ffmpeg"
+	echo -e ""
+	echo -e "Examples:"
+	echo -e "  Single video to mp3:"
+	echo -e "    ./yt.sh -u 'https://www.youtube.com/watch?v=GxrPn7qwt6c' -o mp3"
+	echo -e "  Single video to mkv:"
+	echo -e "    ./yt.sh -u 'https://www.youtube.com/watch?v=GxrPn7qwt6c' -o mkv"
+	echo -e "  Playlist to mp3:"
+	echo -e "    ./yt.sh -u 'https://www.youtube.com/playlist?list=PLxxxxxx' -o mp3"
 	echo -e ""
 	exit 1
 }
-
-regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]'
-#usage() { echo "Usage: $0 [-s <45|90>] [-p <string>]" 1>&2; exit 1; }
 u=""
 o=""
 while getopts "u:o:" opt; do
@@ -113,24 +138,57 @@ if [ -z "${u}" ] || [ -z "${o}" ]; then
    usage
 fi
 
-if [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* && "${o}" == "mkv" ]]; then
-	print_progress "Link ${u} from YT convert to mkv single file."
-	$FILE -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' --restrict-filenames --add-metadata --merge-output-format mkv --output "video/%(title)s.%(ext)s" "${u}"
-elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* && "${o}" == "mp3" ]]; then
-	print_progress "Link ${u} from YT convert to mp3 single file."
-	$FILE --audio-format mp3 --extract-audio --audio-quality 0 --restrict-filenames --add-metadata --embed-thumbnail --output "audio/%(title)s.%(ext)s" "${u}"
-elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* && $o == "mkv" ]]; then
-	print_progress "Link ${u} playlist from YT convert to mkv${NC}"
-	$FILE -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' --verbose --sleep-interval 20 --max-sleep-interval 60 --ignore-errors --restrict-filenames --add-metadata --merge-output-format mkv --output "video/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
-elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* && $o == "mp3" ]]; then
-	print_progress "Link ${u} playlist from YT convert to mp3"
-	$FILE --ignore-errors --audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 --sleep-interval 20 --max-sleep-interval 60 --restrict-filenames --add-metadata --embed-thumbnail --output "audio/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
-elif [[ ${u} =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* && $o = "mp3" ]]; then
-	print_progress "Link ${u} video from YT convert to mp3"
-	$FILE --ignore-errors --audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 --restrict-filenames --add-metadata --embed-thumbnail --output "%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" "${u}"
+# Validate output format
+if [[ "${o}" != "mp3" && "${o}" != "mkv" ]]; then
+	print_error "Invalid output format: ${o}. Must be 'mp3' or 'mkv'"
+	usage
+fi
+
+# Detect URL type
+if [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* ]]; then
+	IS_PLAYLIST=true
+	print_progress "Detected YouTube playlist"
+elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* ]]; then
+	IS_PLAYLIST=false
+	print_progress "Detected YouTube video"
 else
-	print_error "[error] in call $0 link ${u} *NOT* from YT video or playlist."
+	print_error "[error] URL ${u} is not a valid YouTube video or playlist."
 	exit 1
+fi
+
+# Download based on type and format
+if [ "${IS_PLAYLIST}" = true ]; then
+	if [ "${o}" = "mkv" ]; then
+		print_progress "Downloading playlist as mkv files"
+		yt-dlp -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' \
+			${PLAYLIST_OPTS} ${COMMON_OPTS} \
+			--merge-output-format mkv \
+			--output "video/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
+			"${u}"
+	elif [ "${o}" = "mp3" ]; then
+		print_progress "Downloading playlist as mp3 files"
+		yt-dlp ${PLAYLIST_OPTS} ${COMMON_OPTS} \
+			--audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 \
+			--embed-thumbnail \
+			--output "audio/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
+			"${u}"
+	fi
+else
+	if [ "${o}" = "mkv" ]; then
+		print_progress "Downloading video as mkv file"
+		yt-dlp -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' \
+			${COMMON_OPTS} \
+			--merge-output-format mkv \
+			--output "video/%(title)s.%(ext)s" \
+			"${u}"
+	elif [ "${o}" = "mp3" ]; then
+		print_progress "Downloading video as mp3 file"
+		yt-dlp ${COMMON_OPTS} \
+			--audio-format mp3 --extract-audio --audio-quality 0 \
+			--embed-thumbnail \
+			--output "audio/%(title)s.%(ext)s" \
+			"${u}"
+	fi
 fi
 
 print_progress "Finish download ${u} from YT"

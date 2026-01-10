@@ -1,0 +1,66 @@
+# yt-dlp Configuration File Example
+# 
+# Copy this to ~/.ytdlrc or ~/.config/yt-dlp/config for global settings
+# Or place it in the project directory as .ytdlrc for project-specific settings
+#
+# Usage: yt-dlp will automatically read this file
+
+# Output template
+# --output ~/Downloads/%(title)s.%(ext)s
+
+# File naming
+--restrict-filenames
+
+# Metadata
+--add-metadata
+--embed-thumbnail
+
+# Download options
+# --no-playlist          # Don't download playlists, only single videos
+# --yes-playlist         # Download playlists (default)
+
+# Format selection
+# For best quality up to 1080p:
+# --format "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+
+# Network options
+--sleep-interval 5
+--max-sleep-interval 15
+
+# Error handling
+--ignore-errors
+--no-abort-on-error
+
+# Geo restriction
+# --geo-bypass
+
+# Verbose output
+# --verbose
+
+# Quiet mode (minimal output)
+# --quiet
+
+# Archive file (tracks downloaded videos to avoid duplicates)
+# --download-archive downloaded.txt
+
+# Subtitle options
+# --write-subs           # Download subtitles
+# --sub-lang en          # Subtitle language
+# --embed-subs           # Embed subtitles in video
+
+# Thumbnail
+# --write-thumbnail      # Download thumbnail
+# --embed-thumbnail      # Embed thumbnail in audio
+
+# Post-processing
+# --extract-audio        # Extract audio only
+# --audio-format mp3     # Convert audio to mp3
+# --audio-quality 0      # Best audio quality
+
+# Playlist options
+# --playlist-start 1     # Start from this video
+# --playlist-end 10      # End at this video
+# --max-downloads 5      # Maximum number of downloads
+
+# Rate limiting
+# --limit-rate 1M        # Limit download rate to 1MB/s

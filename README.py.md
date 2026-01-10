@@ -18,7 +18,7 @@ $ sudo pip install --upgrade google-api-python-client oauth2client progressbar2
 Install
 =======
 
-```
+```bash
 $ wget https://github.com/tokland/youtube-upload/archive/master.zip
 $ unzip master.zip
 $ cd youtube-upload-master
@@ -45,7 +45,7 @@ The package used to include a default ```client_secrets.json``` file. It does no
 * Top menu: _Enabled API(s)_: Enable all Youtube APIs.
 * Side menu: _APIs & auth_ -> _Credentials_.
 * _Create a Client ID_: Add credentials -> OAuth 2.0 Client ID -> Other -> Name: youtube-upload -> Create -> OK
-* _Download JSON_: Under the section "OAuth 2.0 client IDs". Save the file to your local system. 
+* _Download JSON_: Under the section "OAuth 2.0 client IDs". Save the file to your local system.
 * Use this JSON as your credentials file: `--client-secrets=CLIENT_SECRETS` or copy it to `~/client_secrets.json`.
 
 *Note: ```client_secrets.json``` is a file you can download from the developer console, the credentials file is something auto generated after the first time the script is run and the google account sign in is followed, the file is stored at ```~/.youtube-upload-credentials.json```.*
@@ -78,12 +78,12 @@ $ youtube-upload \
   anne_sophie_mutter.flv
 tx2Zb-145Yz
 ```
-*Other extra medata available :* 
+*Other extra medata available :*
  ```
- --privacy (public | unlisted | private)  
- --publish-at (YYYY-MM-DDThh:mm:ss.sZ)  
- --location (latitude=VAL,longitude=VAL[,altitude=VAL])  
- --thumbnail (string)  
+ --privacy (public | unlisted | private)
+ --publish-at (YYYY-MM-DDThh:mm:ss.sZ)
+ --location (latitude=VAL,longitude=VAL[,altitude=VAL])
+ --thumbnail (string)
  ```
 
 * Upload a video using a browser GUI to authenticate:
@@ -128,7 +128,7 @@ Using [shoogle](https://github.com/tokland/shoogle):
 
 ```
 $ shoogle execute --client-secret-file client_secret.json \
-                  youtube:v3.videoCategories.list <(echo '{"part": "id,snippet", "regionCode": "es"}')  | 
+                  youtube:v3.videoCategories.list <(echo '{"part": "id,snippet", "regionCode": "es"}')  |
     jq ".items[] | select(.snippet.assignable) | {id: .id, title: .snippet.title}"
 ```
 

@@ -1,9 +1,55 @@
-10_Day_Meditation_for_Healing_with_Gurudev
-21_Day_Meditation_Challenge_With_Gurudev
-21_Days_Meditation_For_the_World
-Yoga_and_Healing_Meditation
+# Downloaded media files
+audio/
+video/
+downloads/
 ./download/*
-downloads
-audio
-video
-Eckhart_Tolle_s_Most_Transformational_Teachings
+
+# Specific playlists (legacy)
+10_Day_Meditation_for_Healing_with_Gurudev/
+21_Day_Meditation_Challenge_With_Gurudev/
+21_Days_Meditation_For_the_World/
+Yoga_and_Healing_Meditation/
+Eckhart_Tolle_s_Most_Transformational_Teachings/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Local configuration
+.ytdlrc.local
+config.local.json

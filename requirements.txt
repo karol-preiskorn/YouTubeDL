@@ -1,0 +1,7 @@
+# YouTubeDL Python Requirements
+
+# For uploading videos to YouTube
+youtube-upload
+
+# Optional: Enhanced functionality
+pathlib2; python_version < '3.4'

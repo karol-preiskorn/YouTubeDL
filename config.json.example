@@ -1,0 +1,26 @@
+# Configuration file for YouTubeDL project
+{
+  "download": {
+    "default_format": "mp3",
+    "video_quality": "640",
+    "audio_quality": "0",
+    "output_dirs": {
+      "audio": "./audio",
+      "video": "./video"
+    },
+    "sleep_interval": {
+      "min": 10,
+      "max": 30
+    }
+  },
+  "upload": {
+    "default_privacy": "private",
+    "title_length": 10
+  },
+  "options": {
+    "restrict_filenames": true,
+    "add_metadata": true,
+    "embed_thumbnail": true,
+    "ignore_errors": true
+  }
+}
