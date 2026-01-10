@@ -61,25 +61,24 @@ print_debug() {
 	echo -e "${TXT_COLOR}"
 }
 
-# Check if yt-dlp is installed
-if ! command -v yt-dlp &> /dev/null; then
-    print_error "yt-dlp not found. Please install it with: sudo apt install yt-dlp"
+# Check if yt-dlp is installed - prefer /usr/local/bin (latest) over /usr/bin (apt)
+YTDLP_CMD=""
+if [ -f "/usr/local/bin/yt-dlp" ]; then
+    YTDLP_CMD="/usr/local/bin/yt-dlp"
+    print_progress "Using yt-dlp from /usr/local/bin ($(${YTDLP_CMD} --version))"
+elif command -v yt-dlp &> /dev/null; then
+    YTDLP_CMD="yt-dlp"
+    print_progress "Using yt-dlp from PATH ($(${YTDLP_CMD} --version))"
+else
+    print_error "yt-dlp not found. Please install it with: sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && sudo chmod a+rx /usr/local/bin/yt-dlp"
     exit 1
 fi
 
-# Common options
-COMMON_OPTS="--restrict-filenames --add-metadata"
+# Common options with comprehensive metadata
+COMMON_OPTS="--restrict-filenames --add-metadata --write-description --write-info-json --embed-chapters"
 PLAYLIST_OPTS="--verbose --sleep-interval 10 --max-sleep-interval 30 --ignore-errors"
-
-# Check if yt-dlp is installed
-if ! command -v yt-dlp &> /dev/null; then
-    print_error "yt-dlp not found. Please install it with: sudo apt install yt-dlp"
-    exit 1
-fi
-
-# Common options
-COMMON_OPTS="--restrict-filenames --add-metadata"
-PLAYLIST_OPTS="--verbose --sleep-interval 10 --max-sleep-interval 30 --ignore-errors"
+# Extractor args to help with 403 errors - use android client which is more reliable
+EXTRACTOR_ARGS="--extractor-args youtube:player_client=android"
 
 regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]'
 
@@ -160,14 +159,15 @@ fi
 if [ "${IS_PLAYLIST}" = true ]; then
 	if [ "${o}" = "mkv" ]; then
 		print_progress "Downloading playlist as mkv files"
-		yt-dlp -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' \
-			${PLAYLIST_OPTS} ${COMMON_OPTS} \
+		${YTDLP_CMD} -f '(bestvideo[height<=640]+bestaudio)/best[height<=640]' \
+			${PLAYLIST_OPTS} ${COMMON_OPTS} ${EXTRACTOR_ARGS} \
 			--merge-output-format mkv \
+			--embed-thumbnail --write-subs --embed-subs --sub-langs "en.*,en" \
 			--output "video/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
 			"${u}"
 	elif [ "${o}" = "mp3" ]; then
 		print_progress "Downloading playlist as mp3 files"
-		yt-dlp ${PLAYLIST_OPTS} ${COMMON_OPTS} \
+		${YTDLP_CMD} ${PLAYLIST_OPTS} ${COMMON_OPTS} ${EXTRACTOR_ARGS} \
 			--audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 \
 			--embed-thumbnail \
 			--output "audio/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
@@ -176,14 +176,15 @@ if [ "${IS_PLAYLIST}" = true ]; then
 else
 	if [ "${o}" = "mkv" ]; then
 		print_progress "Downloading video as mkv file"
-		yt-dlp -f 'bestvideo[height<=640]+bestaudio/best[height<=640]' \
-			${COMMON_OPTS} \
+		${YTDLP_CMD} -f '(bestvideo[height<=640]+bestaudio)/best[height<=640]' \
+			${COMMON_OPTS} ${EXTRACTOR_ARGS} \
 			--merge-output-format mkv \
+			--embed-thumbnail --write-subs --embed-subs --sub-langs "en.*,en" \
 			--output "video/%(title)s.%(ext)s" \
 			"${u}"
 	elif [ "${o}" = "mp3" ]; then
 		print_progress "Downloading video as mp3 file"
-		yt-dlp ${COMMON_OPTS} \
+		${YTDLP_CMD} ${COMMON_OPTS} ${EXTRACTOR_ARGS} \
 			--audio-format mp3 --extract-audio --audio-quality 0 \
 			--embed-thumbnail \
 			--output "audio/%(title)s.%(ext)s" \
