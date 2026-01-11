@@ -183,6 +183,13 @@ else
     exit 1
 fi
 
+# Vimeo authentication support
+VIMEO_AUTH_OPTS=""
+if [ -n "${VIMEO_AUTH:-}" ]; then
+    VIMEO_AUTH_OPTS="${VIMEO_AUTH}"
+    print_progress "Using Vimeo authentication"
+fi
+
 # Common options with comprehensive metadata
 COMMON_OPTS="--restrict-filenames --add-metadata --write-description --write-info-json --embed-chapters"
 PLAYLIST_OPTS="--verbose --sleep-interval 10 --max-sleep-interval 30 --ignore-errors"
@@ -195,10 +202,10 @@ regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]
 
 usage() {
 	echo -e ""
-	echo -e "Usage: yt.sh -u <yt url> -o [mp3|mkv]"
+	echo -e "Usage: yt.sh -u <url> -o [mp3|mkv]"
 	echo -e ""
 	echo -e "Options:"
-	echo -e "  -u <url>    YouTube video or playlist URL"
+	echo -e "  -u <url>    YouTube or Vimeo video/playlist URL"
 	echo -e "  -o <format> Output format (mp3 for audio, mkv for video)"
 	echo -e ""
 	echo -e "PRE-RUN:"
@@ -206,8 +213,10 @@ usage() {
 	echo -e "  - sudo apt install ffmpeg"
 	echo -e ""
 	echo -e "Examples:"
-	echo -e "  Single video to mp3:"
+	echo -e "  YouTube video to mp3:"
 	echo -e "    ./yt.sh -u 'https://www.youtube.com/watch?v=GxrPn7qwt6c' -o mp3"
+	echo -e "  Vimeo video to mkv:"
+	echo -e "    ./yt.sh -u 'https://vimeo.com/123456789' -o mkv"
 	echo -e "  Single video to mkv:"
 	echo -e "    ./yt.sh -u 'https://www.youtube.com/watch?v=GxrPn7qwt6c' -o mkv"
 	echo -e "  Playlist to mp3:"
@@ -254,15 +263,29 @@ if [[ "${o}" != "mp3" && "${o}" != "mkv" ]]; then
 	usage
 fi
 
-# Detect URL type
+# Detect URL type and platform
 if [[ "${u}" =~ ^https://(www\.)?youtube\.com/playlist\?list=.* ]]; then
 	IS_PLAYLIST=true
+	PLATFORM="YouTube"
 	print_progress "Detected YouTube playlist"
 elif [[ "${u}" =~ ^https://(www\.)?youtube\.com/watch\?.*v=([a-zA-Z0-9-]+).* ]]; then
 	IS_PLAYLIST=false
+	PLATFORM="YouTube"
 	print_progress "Detected YouTube video"
+elif [[ "${u}" =~ ^https://vimeo\.com/.* ]]; then
+	IS_PLAYLIST=false  # Vimeo playlists have different detection
+	PLATFORM="Vimeo"
+	print_progress "Detected Vimeo video"
+	# Check if this is a private/password-protected Vimeo video
+	if [[ "${u}" =~ /[a-zA-Z0-9]+ ]]; then
+		print_info "Note: Private Vimeo videos may require authentication"
+	fi
 else
-	print_error "[error] URL ${u} is not a valid YouTube video or playlist."
+	print_error "[error] URL ${u} is not a valid YouTube or Vimeo video/playlist."
+	print_error "Supported formats:"
+	print_error "  - YouTube: https://www.youtube.com/watch?v=..."
+	print_error "  - YouTube Playlist: https://www.youtube.com/playlist?list=..."
+	print_error "  - Vimeo: https://vimeo.com/..."
 	exit 1
 fi
 
@@ -271,14 +294,14 @@ if [ "${IS_PLAYLIST}" = true ]; then
 	if [ "${o}" = "mkv" ]; then
 		print_progress "Downloading playlist as mkv files"
 		${YTDLP_CMD} -f '(bestvideo[height<=640]+bestaudio)/best[height<=640]' \
-			${PLAYLIST_OPTS} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
+			${PLAYLIST_OPTS} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} ${VIMEO_AUTH_OPTS} \
 			--merge-output-format mkv \
 			--embed-thumbnail --write-subs --embed-subs --sub-langs "en.*,en" \
 			--output "video/%(uploader)s/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
 			"${u}"
 	elif [ "${o}" = "mp3" ]; then
 		print_progress "Downloading playlist as mp3 files"
-		${YTDLP_CMD} ${PLAYLIST_OPTS} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
+		${YTDLP_CMD} ${PLAYLIST_OPTS} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} ${VIMEO_AUTH_OPTS} \
 			--audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 \
 			--embed-thumbnail \
 			--output "audio/%(uploader)s/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
@@ -288,14 +311,14 @@ else
 	if [ "${o}" = "mkv" ]; then
 		print_progress "Downloading video as mkv file"
 		${YTDLP_CMD} -f '(bestvideo[height<=640]+bestaudio)/best[height<=640]' \
-			${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
+			${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} ${VIMEO_AUTH_OPTS} \
 			--merge-output-format mkv \
 			--embed-thumbnail --write-subs --embed-subs --sub-langs "en.*,en" \
 			--output "video/%(uploader)s/%(title)s.%(ext)s" \
 			"${u}"
 	elif [ "${o}" = "mp3" ]; then
 		print_progress "Downloading video as mp3 file"
-		${YTDLP_CMD} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
+		${YTDLP_CMD} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} ${VIMEO_AUTH_OPTS} \
 			--audio-format mp3 --extract-audio --audio-quality 0 \
 			--embed-thumbnail \
 			--output "audio/%(uploader)s/%(title)s.%(ext)s" \
