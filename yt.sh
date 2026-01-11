@@ -77,7 +77,9 @@ fi
 # Common options with comprehensive metadata
 COMMON_OPTS="--restrict-filenames --add-metadata --write-description --write-info-json --embed-chapters"
 PLAYLIST_OPTS="--verbose --sleep-interval 10 --max-sleep-interval 30 --ignore-errors"
-# Extractor args to help with 403 errors - use android client which is more reliable
+# Network and retry options to handle 503 errors - add throttling to avoid rate limits
+NETWORK_OPTS="--retries 20 --fragment-retries 20 --retry-sleep 5 --file-access-retries 10 --throttled-rate 1M"
+# Extractor args to help with 403/503 errors - use android client which is more reliable
 EXTRACTOR_ARGS="--extractor-args youtube:player_client=android"
 
 regex='(https?|ftp|file)://[-[:alnum:]\+&@#/%?=~_|!:,.;]*[-[:alnum:]\+&@#/%=~_|]'
@@ -160,34 +162,34 @@ if [ "${IS_PLAYLIST}" = true ]; then
 	if [ "${o}" = "mkv" ]; then
 		print_progress "Downloading playlist as mkv files"
 		${YTDLP_CMD} -f '(bestvideo[height<=640]+bestaudio)/best[height<=640]' \
-			${PLAYLIST_OPTS} ${COMMON_OPTS} ${EXTRACTOR_ARGS} \
+			${PLAYLIST_OPTS} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
 			--merge-output-format mkv \
 			--embed-thumbnail --write-subs --embed-subs --sub-langs "en.*,en" \
-			--output "video/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
+			--output "video/%(uploader)s/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
 			"${u}"
 	elif [ "${o}" = "mp3" ]; then
 		print_progress "Downloading playlist as mp3 files"
-		${YTDLP_CMD} ${PLAYLIST_OPTS} ${COMMON_OPTS} ${EXTRACTOR_ARGS} \
+		${YTDLP_CMD} ${PLAYLIST_OPTS} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
 			--audio-format mp3 --format bestaudio --extract-audio --audio-quality 0 \
 			--embed-thumbnail \
-			--output "audio/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
+			--output "audio/%(uploader)s/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s" \
 			"${u}"
 	fi
 else
 	if [ "${o}" = "mkv" ]; then
 		print_progress "Downloading video as mkv file"
 		${YTDLP_CMD} -f '(bestvideo[height<=640]+bestaudio)/best[height<=640]' \
-			${COMMON_OPTS} ${EXTRACTOR_ARGS} \
+			${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
 			--merge-output-format mkv \
 			--embed-thumbnail --write-subs --embed-subs --sub-langs "en.*,en" \
-			--output "video/%(title)s.%(ext)s" \
+			--output "video/%(uploader)s/%(title)s.%(ext)s" \
 			"${u}"
 	elif [ "${o}" = "mp3" ]; then
 		print_progress "Downloading video as mp3 file"
-		${YTDLP_CMD} ${COMMON_OPTS} ${EXTRACTOR_ARGS} \
+		${YTDLP_CMD} ${COMMON_OPTS} ${NETWORK_OPTS} ${EXTRACTOR_ARGS} \
 			--audio-format mp3 --extract-audio --audio-quality 0 \
 			--embed-thumbnail \
-			--output "audio/%(title)s.%(ext)s" \
+			--output "audio/%(uploader)s/%(title)s.%(ext)s" \
 			"${u}"
 	fi
 fi

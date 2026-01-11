@@ -20,6 +20,51 @@ The script now automatically:
 - Uses `android` player client for better compatibility
 - Adds `--extractor-args youtube:player_client=android`
 
+### HTTP 503 Service Unavailable Error
+
+**Problem:** Getting "HTTP Error 503: Service Unavailable" during downloads.
+
+**Cause:** YouTube is rate-limiting or throttling your connection due to:
+
+- Too many requests
+- Too fast download speed
+- Temporary server issues
+- Network congestion
+
+**Solutions:**
+
+The script now automatically handles 503 errors with:
+
+- **20 retries** (increased from 10)
+- **5 second sleep** between retries
+- **Throttled rate** to 1MB/s to avoid triggering rate limits
+- **Automatic resume** from where download stopped
+
+**Additional options if issues persist:**
+
+1. **Wait and retry later** - Sometimes YouTube servers are temporarily overloaded
+2. **Reduce throttle rate** in [yt.sh](yt.sh):
+
+   ```bash
+   # Change from 1M to 500K for slower, more reliable downloads
+   NETWORK_OPTS="... --throttled-rate 500K"
+   ```
+
+3. **Add longer sleep intervals** between downloads:
+
+   ```bash
+   PLAYLIST_OPTS="... --sleep-interval 30 --max-sleep-interval 60 ..."
+   ```
+
+4. **Try different time of day** - YouTube may be less busy during off-peak hours
+5. **Use VPN** - Sometimes different IP addresses have different rate limits
+
+**Manual download with custom settings:**
+
+```bash
+yt-dlp --throttled-rate 500K --retries 30 --retry-sleep 10 '<url>'
+```
+
 ### YouTube API Changes
 
 YouTube frequently updates their API. If downloads fail:
