@@ -86,27 +86,32 @@ When you download videos or audio, the script automatically creates `README.md` 
 ## Features of Auto-Generated READMEs
 
 ✅ **Channel Information**
+
 - Channel name, ID, and URL
 - Uploader ID and profile links
 - Upload dates
 
 ✅ **Playlist Details** (for playlist downloads)
+
 - Playlist title and ID
 - Number of videos in playlist
 
 ✅ **File Listings**
+
 - All downloaded media files with sizes
 - Subtitle files (for video downloads)
 - Metadata and description files
 - Thumbnail files
 
 ✅ **Organization**
+
 - Clearly structured sections
 - File size information for easy management
 - Links to original sources
 - Generation timestamp
 
 ✅ **Git Tracking**
+
 - README.md files are tracked in git (while media files are ignored)
 - Preserves download history and channel information
 - Easy to browse downloaded content without media players

@@ -65,27 +65,27 @@ print_debug() {
 create_folder_readme() {
 	local folder_path="$1"
 	local format="$2"
-	
+
 	if [ ! -d "$folder_path" ]; then
 		return
 	fi
-	
+
 	local readme_file="$folder_path/README.md"
 	local info_json_file
-	
+
 	# Find the first .info.json file to extract metadata
 	info_json_file=$(find "$folder_path" -name "*.info.json" -type f | head -1)
-	
+
 	if [ -z "$info_json_file" ]; then
 		return
 	fi
-	
+
 	print_progress "Creating README.md in $folder_path"
-	
+
 	# Extract metadata using Python (more reliable than jq)
 	local channel_name uploader_id channel_id channel_url
 	local playlist_title playlist_id playlist_count upload_date
-	
+
 	channel_name=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('channel', data.get('uploader', 'Unknown')))" 2>/dev/null || echo "Unknown")
 	uploader_id=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('uploader_id', data.get('channel_id', '')))" 2>/dev/null || echo "")
 	channel_id=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('channel_id', ''))" 2>/dev/null || echo "")
@@ -93,12 +93,12 @@ create_folder_readme() {
 	playlist_title=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('playlist_title', ''))" 2>/dev/null || echo "")
 	playlist_id=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('playlist_id', ''))" 2>/dev/null || echo "")
 	upload_date=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('upload_date', ''))" 2>/dev/null || echo "")
-	
+
 	# Format upload date if available
 	if [ -n "$upload_date" ] && [ ${#upload_date} -eq 8 ]; then
 		upload_date="${upload_date:0:4}-${upload_date:4:2}-${upload_date:6:2}"
 	fi
-	
+
 	# Create README.md
 	cat > "$readme_file" << EOF
 # $channel_name
@@ -166,7 +166,7 @@ done)
 
 *Generated on $(date) by [YouTubeDL](https://github.com/karol-preiskorn/YouTubeDL)*
 EOF
-	
+
 	print_progress "README.md created in $folder_path"
 }
 

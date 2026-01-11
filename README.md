@@ -226,6 +226,7 @@ YouTubeDL/
 ```
 
 **New!** 📋 **Auto-generated README.md files** include:
+
 - Channel information (name, ID, URL)
 - Playlist details (for playlist downloads)
 - Complete file listings with sizes
