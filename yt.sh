@@ -61,6 +61,115 @@ print_debug() {
 	echo -e "${TXT_COLOR}"
 }
 
+# Function to create README.md files in download folders
+create_folder_readme() {
+	local folder_path="$1"
+	local format="$2"
+	
+	if [ ! -d "$folder_path" ]; then
+		return
+	fi
+	
+	local readme_file="$folder_path/README.md"
+	local info_json_file
+	
+	# Find the first .info.json file to extract metadata
+	info_json_file=$(find "$folder_path" -name "*.info.json" -type f | head -1)
+	
+	if [ -z "$info_json_file" ]; then
+		return
+	fi
+	
+	print_progress "Creating README.md in $folder_path"
+	
+	# Extract metadata using Python (more reliable than jq)
+	local channel_name uploader_id channel_id channel_url
+	local playlist_title playlist_id playlist_count upload_date
+	
+	channel_name=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('channel', data.get('uploader', 'Unknown')))" 2>/dev/null || echo "Unknown")
+	uploader_id=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('uploader_id', data.get('channel_id', '')))" 2>/dev/null || echo "")
+	channel_id=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('channel_id', ''))" 2>/dev/null || echo "")
+	channel_url=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('channel_url', data.get('uploader_url', '')))" 2>/dev/null || echo "")
+	playlist_title=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('playlist_title', ''))" 2>/dev/null || echo "")
+	playlist_id=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('playlist_id', ''))" 2>/dev/null || echo "")
+	upload_date=$(python3 -c "import json, sys; data=json.load(open('$info_json_file')); print(data.get('upload_date', ''))" 2>/dev/null || echo "")
+	
+	# Format upload date if available
+	if [ -n "$upload_date" ] && [ ${#upload_date} -eq 8 ]; then
+		upload_date="${upload_date:0:4}-${upload_date:4:2}-${upload_date:6:2}"
+	fi
+	
+	# Create README.md
+	cat > "$readme_file" << EOF
+# $channel_name
+
+## Channel Information
+
+- **Channel Name:** $channel_name
+- **Channel ID:** ${channel_id:-N/A}
+- **Uploader ID:** ${uploader_id:-N/A}
+$([ -n "$channel_url" ] && echo "- **Channel URL:** $channel_url")
+$([ -n "$upload_date" ] && echo "- **Upload Date:** $upload_date")
+
+$(if [ -n "$playlist_title" ]; then
+echo "## Playlist Information
+
+- **Playlist:** $playlist_title
+- **Playlist ID:** ${playlist_id:-N/A}"
+fi)
+
+## Downloaded Files
+
+$(if [ "$format" = "mkv" ]; then
+echo "### Video Files"
+find "$folder_path" -name "*.mp4" -o -name "*.mkv" | sort | while read file; do
+	filename=$(basename "$file")
+	filesize=$(du -h "$file" 2>/dev/null | cut -f1 || echo "Unknown")
+	echo "- **$filename** ($filesize)"
+done
+echo ""
+echo "### Subtitles"
+find "$folder_path" -name "*.srt" -o -name "*.vtt" | sort | while read file; do
+	filename=$(basename "$file")
+	echo "- $filename"
+done
+else
+echo "### Audio Files"
+find "$folder_path" -name "*.mp3" -o -name "*.m4a" -o -name "*.ogg" | sort | while read file; do
+	filename=$(basename "$file")
+	filesize=$(du -h "$file" 2>/dev/null | cut -f1 || echo "Unknown")
+	echo "- **$filename** ($filesize)"
+done
+fi)
+
+## Additional Files
+
+### Metadata
+$(find "$folder_path" -name "*.info.json" | sort | while read file; do
+	filename=$(basename "$file")
+	echo "- $filename (Complete metadata)"
+done)
+
+### Descriptions
+$(find "$folder_path" -name "*.description" | sort | while read file; do
+	filename=$(basename "$file")
+	echo "- $filename (Video description)"
+done)
+
+### Thumbnails
+$(find "$folder_path" -name "*.webp" -o -name "*.jpg" -o -name "*.png" | sort | while read file; do
+	filename=$(basename "$file")
+	echo "- $filename"
+done)
+
+---
+
+*Generated on $(date) by [YouTubeDL](https://github.com/karol-preiskorn/YouTubeDL)*
+EOF
+	
+	print_progress "README.md created in $folder_path"
+}
+
 # Check if yt-dlp is installed - prefer /usr/local/bin (latest) over /usr/bin (apt)
 YTDLP_CMD=""
 if [ -f "/usr/local/bin/yt-dlp" ]; then
@@ -195,3 +304,30 @@ else
 fi
 
 print_progress "Finish download ${u} from YT"
+
+# Create README.md files in download folders
+if [ "${IS_PLAYLIST}" = true ]; then
+	if [ "${o}" = "mkv" ]; then
+		# For playlists, create README in each uploader/playlist folder
+		find video -mindepth 2 -maxdepth 2 -type d -name "*" 2>/dev/null | while read folder; do
+			create_folder_readme "$folder" "mkv"
+		done
+	elif [ "${o}" = "mp3" ]; then
+		find audio -mindepth 2 -maxdepth 2 -type d -name "*" 2>/dev/null | while read folder; do
+			create_folder_readme "$folder" "mp3"
+		done
+	fi
+else
+	if [ "${o}" = "mkv" ]; then
+		# For single videos, create README in uploader folder
+		find video -mindepth 1 -maxdepth 1 -type d -name "*" 2>/dev/null | while read folder; do
+			create_folder_readme "$folder" "mkv"
+		done
+	elif [ "${o}" = "mp3" ]; then
+		find audio -mindepth 1 -maxdepth 1 -type d -name "*" 2>/dev/null | while read folder; do
+			create_folder_readme "$folder" "mp3"
+		done
+	fi
+fi
+
+print_progress "README.md files created"

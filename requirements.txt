@@ -1,7 +1,14 @@
 # YouTubeDL Python Requirements
 
 # For uploading videos to YouTube
-youtube-upload
+# Note: youtube-upload is not available in PyPI
+# Install manually from: https://github.com/tokland/youtube-upload
+# Or use: pip install git+https://github.com/tokland/youtube-upload.git
+
+# Alternative: Google API client for YouTube uploads
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
 
 # Optional: Enhanced functionality
 pathlib2; python_version < '3.4'

@@ -1,6 +1,8 @@
-# Downloaded media files
-audio/
-video/
+# Downloaded media files - allow directories but ignore all files except README.md
+audio/*/*
+!audio/*/README.md
+video/*/*
+!video/*/README.md
 downloads/
 ./download/*
 
