@@ -1,10 +1,10 @@
 # YouTubeDL
 
-A command-line tool to download YouTube videos and playlists as audio (mp3) or video (mkv) files.
+A Bash-based command-line tool for downloading YouTube and Vimeo videos or YouTube playlists as MP3 audio or MKV video.
 
 ## Features
 
-- Download single YouTube videos or entire playlists
+- Download single YouTube or Vimeo videos, or entire YouTube playlists
 - Convert to audio (mp3) or video (mkv) format
 - **Comprehensive metadata preservation** (see [METADATA.md](METADATA.md)):
   - Embedded titles, artist, date, description, URL
@@ -19,7 +19,7 @@ A command-line tool to download YouTube videos and playlists as audio (mp3) or v
   - Lists all downloaded files with sizes
   - Links to metadata and additional files
 - Progress tracking with colored output
-- Error handling and validation
+- Input validation, retry handling, and progress reporting
 - Support for playlist organization
 
 ## Prerequisites
@@ -50,9 +50,7 @@ A command-line tool to download YouTube videos and playlists as audio (mp3) or v
    sudo apt install ffmpeg
    ```
 
-3. **Python 3** (For upload scripts)
-
-4. **Python 3** (For upload scripts)
+3. **Python 3** (for the upload utility)
 
    ```bash
    sudo apt-get install python3 python3-venv python3-pip
@@ -126,63 +124,75 @@ Run the test script to verify everything is working:
 ./test.sh
 ```
 
-This will check:
+This checks:
 
 - Virtual environment setup
-- Python packages installation
+- Required Python package installation
 - Script permissions
-- Syntax validation
+- Python syntax and uploader usage
+
+The command exits with a nonzero status if any check fails.
 
 ## Usage
 
-### Download Script (yt.sh)
+### Downloading (yt.sh)
 
 Basic syntax:
 
 ```bash
-./yt.sh -u <youtube_url> -o <format>
+./yt.sh -u <url> -o <format>
 ```
 
 **Options:**
 
-- `-u <url>` : YouTube video or playlist URL (required)
+- `-u <url>` : YouTube or Vimeo video URL, or YouTube playlist URL (required)
 - `-o <format>` : Output format - either `mp3` or `mkv` (required)
 
 **Examples:**
 
-1. Download a single video as mp3:
+1. Download a YouTube video as MP3:
 
    ```bash
    ./yt.sh -u 'https://www.youtube.com/watch?v=GxrPn7qwt6c' -o mp3
    ```
 
-2. Download a single video as mkv:
+2. Download a YouTube video as MKV:
 
    ```bash
    ./yt.sh -u 'https://www.youtube.com/watch?v=GxrPn7qwt6c' -o mkv
    ```
 
-3. Download an entire playlist as mp3:
+3. Download a YouTube playlist as MP3:
 
    ```bash
    ./yt.sh -u 'https://www.youtube.com/playlist?list=PLxxxxxx' -o mp3
    ```
 
-4. Download an entire playlist as mkv:
+4. Download a YouTube playlist as MKV:
 
    ```bash
    ./yt.sh -u 'https://www.youtube.com/playlist?list=PLxxxxxx' -o mkv
    ```
 
-### Upload Scripts
+5. Download a Vimeo video as MKV:
 
-Upload downloaded files to YouTube (requires active virtual environment):
+   ```bash
+   ./yt.sh -u 'https://vimeo.com/123456789' -o mkv
+   ```
+
+For private Vimeo videos, set the authentication options expected by yt-dlp in
+the `VIMEO_AUTH` environment variable before running the command.
+
+### Uploading
+
+Upload downloaded media to YouTube with either entry point. Both commands use
+the same implementation and require an active virtual environment:
 
 ```bash
 # Activate virtual environment first
 source venv/bin/activate
 
-# Then run upload scripts
+# Upload MP3 files
 python uploader.py <directory_path> <file_extension>
 ```
 
@@ -193,6 +203,14 @@ source venv/bin/activate
 python uploader.py ./audio .mp3
 python yt-upload.py ./video .mkv
 ```
+
+Supported extensions are `.aac`, `.m4a`, `.mkv`, `.mp3`, `.mp4`, `.ogg`,
+`.wav`, and `.webm`. The extension must be supplied as a complete suffix, such
+as `.mp3`; arbitrary glob patterns are rejected.
+
+Each matching file is uploaded as a private video with a generated title. The
+uploader exits with status `1` if the directory is missing, the extension is
+unsupported, `youtube-upload` is unavailable, or any upload fails.
 
 ## Output Structure
 
@@ -225,14 +243,14 @@ YouTubeDL/
             └── 002 - Video_Title.mkv
 ```
 
-**New!** 📋 **Auto-generated README.md files** include:
+Auto-generated `README.md` files include:
 
 - Channel information (name, ID, URL)
 - Playlist details (for playlist downloads)
 - Complete file listings with sizes
 - Upload dates and metadata information
 
-📋 **See [README_EXAMPLE.md](README_EXAMPLE.md) for sample auto-generated README files**
+See [README_EXAMPLE.md](README_EXAMPLE.md) for sample generated README files.
 
 **Note:** Each download includes metadata files (`.description` and `.info.json`). See [METADATA.md](METADATA.md) for details.
 
@@ -252,9 +270,12 @@ YouTubeDL/
 
 ### Playlist Downloads
 
-- Sleep interval: 10-30 seconds between downloads
-- Continues on errors (skips unavailable videos)
+- Sleep interval: 10-30 seconds between playlist downloads
+- Continues on unavailable playlist items
 - Preserves playlist order with index numbers
+
+Running a download again refreshes the generated README files in the affected
+download folders.
 
 ### Metadata Preservation
 
@@ -273,8 +294,8 @@ All downloads include comprehensive metadata:
 ├── setup.sh           # Automated setup script
 ├── test.sh            # Test/verification script
 ├── yt.sh              # Main download script
-├── uploader.py        # YouTube upload utility
-├── yt-upload.py       # Alternative upload utility
+├── uploader.py        # Shared YouTube upload implementation and CLI
+├── yt-upload.py       # Compatibility entry point for uploader.py
 ├── requirements.txt   # Python dependencies
 ├── METADATA.md        # Metadata documentation
 ├── TROUBLESHOOTING.md # Troubleshooting guide
@@ -318,9 +339,16 @@ pip install -r requirements.txt
 chmod +x yt.sh
 ```
 
+**Upload command fails:**
+
+Make sure the `youtube-upload` command is installed and authenticated, then
+run the uploader with a supported extension. A failed upload is reflected in
+the command's exit status and should not be treated as a successful batch.
+
 ## Configuration
 
-You can create a `.ytdlrc` file in your home directory for default yt-dlp options:
+You can create a `.ytdlrc` file in your home directory for default yt-dlp options.
+For example:
 
 ```bash
 # ~/.ytdlrc
@@ -328,6 +356,9 @@ You can create a `.ytdlrc` file in your home directory for default yt-dlp option
 --restrict-filenames
 --add-metadata
 ```
+
+The repository's `config.json.example` documents project settings, but the
+current Bash and Python scripts do not load that JSON file automatically.
 
 ## Contributing
 
@@ -341,7 +372,3 @@ This project is provided as-is for educational and personal use.
 
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - The core download engine
 - [ffmpeg](https://ffmpeg.org/) - Media processing
-
-## Author
-
-Karol Preiskorn ([@karol-preiskorn](https://github.com/karol-preiskorn))
