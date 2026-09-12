@@ -11,6 +11,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo "=== YouTubeDL Test Suite ==="
+failures=0
 
 # Test 1: Check if venv exists
 if [ -d "venv" ]; then
@@ -35,20 +36,54 @@ PYTHON_VERSION=$(python --version 2>&1)
 echo -e "${GREEN}✓${NC} Python: $PYTHON_VERSION"
 
 # Test 4: Check if packages are installed
-python -c "import googleapiclient" 2>/dev/null && echo -e "${GREEN}✓${NC} Google API client installed" || echo -e "${RED}✗${NC} Google API client not found"
+if python -c "import googleapiclient" 2>/dev/null; then
+    echo -e "${GREEN}✓${NC} Google API client installed"
+else
+    echo -e "${RED}✗${NC} Google API client not found"
+    failures=$((failures + 1))
+fi
 
 # Test 5: Check if scripts are executable
-[ -x "yt.sh" ] && echo -e "${GREEN}✓${NC} yt.sh is executable" || echo -e "${RED}✗${NC} yt.sh is not executable"
-[ -x "setup.sh" ] && echo -e "${GREEN}✓${NC} setup.sh is executable" || echo -e "${RED}✗${NC} setup.sh is not executable"
+if [ -x "yt.sh" ]; then
+    echo -e "${GREEN}✓${NC} yt.sh is executable"
+else
+    echo -e "${RED}✗${NC} yt.sh is not executable"
+    failures=$((failures + 1))
+fi
+if [ -x "setup.sh" ]; then
+    echo -e "${GREEN}✓${NC} setup.sh is executable"
+else
+    echo -e "${RED}✗${NC} setup.sh is not executable"
+    failures=$((failures + 1))
+fi
 
 # Test 6: Check Python scripts syntax
-python -m py_compile uploader.py && echo -e "${GREEN}✓${NC} uploader.py syntax OK" || echo -e "${RED}✗${NC} uploader.py syntax error"
-python -m py_compile yt-upload.py && echo -e "${GREEN}✓${NC} yt-upload.py syntax OK" || echo -e "${RED}✗${NC} yt-upload.py syntax error"
+if python -m py_compile uploader.py; then
+    echo -e "${GREEN}✓${NC} uploader.py syntax OK"
+else
+    echo -e "${RED}✗${NC} uploader.py syntax error"
+    failures=$((failures + 1))
+fi
+if python -m py_compile yt-upload.py; then
+    echo -e "${GREEN}✓${NC} yt-upload.py syntax OK"
+else
+    echo -e "${RED}✗${NC} yt-upload.py syntax error"
+    failures=$((failures + 1))
+fi
 
 # Test 7: Check help output
-python uploader.py 2>&1 | grep -q "Usage:" && echo -e "${GREEN}✓${NC} uploader.py help works" || echo -e "${RED}✗${NC} uploader.py help failed"
+if python uploader.py 2>&1 | grep -q "Usage:"; then
+    echo -e "${GREEN}✓${NC} uploader.py help works"
+else
+    echo -e "${RED}✗${NC} uploader.py help failed"
+    failures=$((failures + 1))
+fi
 
 echo ""
+if [ "$failures" -ne 0 ]; then
+    echo -e "${RED}${failures} test(s) failed.${NC}"
+    exit 1
+fi
 echo -e "${GREEN}All tests passed! Project is ready to use.${NC}"
 echo ""
 echo "To download a video:"

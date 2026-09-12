@@ -100,7 +100,7 @@ create_folder_readme() {
 	fi
 
 	# Create README.md
-	cat > "$readme_file" << EOF
+	cat >| "$readme_file" << EOF
 # $channel_name
 
 ## Channel Information
